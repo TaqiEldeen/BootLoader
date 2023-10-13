@@ -18,24 +18,45 @@
 #include "UART_int.h"
 #include "FPEC_int.h"
 
+/* APP Inclusion */
 #include "PARSER/PARSER.h"
 
+/*****              MACROS                              *****/
 #define APP_FIRST_ADDRESS   0x08001004
 
+
+/*****              GLOBAL VARIABLES                    *****/
 volatile u8 endOfBLF = 0;
 volatile u8 u8RecBuffer[100];
 volatile u8 startParse = 0;
 volatile u8 eraseState = 1;
 
-void endBootLoader(void);
-void uartHandler(u16 data);
+
+/*****              Local Functions                    *****/
+
+/**
+ * @brief End the bootloader and start the application
+ * 
+ */
+static void endBootLoader(void);
+
+/**
+ * @brief UART Handler for the bootloader
+ * 
+ * @param data 
+ */
+static void uartHandler(u16 data);
+
+/**
+ * @brief Initialise the system clocks
+ * 
+ */
+static void initSystemClks(void);
+
 
 int main() {
     /* System Clocks init */
-    RCC_vInitSysClk();
-    RCC_vEnableClk(RCC_APB2, USART1);
-    RCC_vEnableClk(RCC_APB2, IOPA);
-    RCC_vEnableClk(RCC_AHB, FLITF);
+    initSystemClks();
 
     /* BOOTLOADER LED */
 //    DIO_vSetPinMode(PORTA_ID, PIN1_ID, OUTPUT_2MHZ_PP);
@@ -62,17 +83,35 @@ int main() {
 
     SYSTICK_vSetIntervalSingle(15000000, &endBootLoader);
 
+    HEX_RECORD_TYPE recordType;
     while(endOfBLF == 0) {
+
+        /* Wait For Receiving New Record */
         if(startParse == 1) {
-            Parser_voidParseRecord(&u8RecBuffer);
+            /* Parse The Received Record */
+            recordType = Parser_voidParseRecord(&u8RecBuffer);
+
+            /* Check If It the last record */
+            if(recordType == END_OF_FILE_RECORD) {
+                endOfBLF = 1;
+                endBootLoader();
+            }
+
+            /* Reply For The GUI APP To receive New Record */
             UART_vSendString("ok", UART1_ID);
+
             SYSTICK_vTurnOn();
             startParse = 0;
         }
     }
 }
 
-void endBootLoader(void) {
+
+/**
+ * @brief End the bootloader and start the application
+ * 
+ */
+static void endBootLoader(void) {
     /* Definition for the vector table */
     #define SCB_VTOR   *((volatile u32*)0xE000ED08)
 
@@ -87,7 +126,13 @@ void endBootLoader(void) {
     L_AppFirstAdd();
 }
 
-void uartHandler(u16 data) {
+
+/**
+ * @brief UART Handler for the bootloader
+ * 
+ * @param data 
+ */
+static void uartHandler(u16 data) {
     static u8 u8RecIndex = 0;
 
     /* Received New Data: Reset The Timeout to 5 seconds */
@@ -112,5 +157,15 @@ void uartHandler(u16 data) {
 }
 
 
+/**
+ * @brief Initialise the system clocks
+ * 
+ */
+void initSystemClks(void) {
+    RCC_vInitSysClk();
+    RCC_vEnableClk(RCC_APB2, USART1);
+    RCC_vEnableClk(RCC_APB2, IOPA);
+    RCC_vEnableClk(RCC_AHB, FLITF);
+}
 
 
