@@ -168,7 +168,7 @@ static void uartHandler(u16 data) {
  * @brief Initialise the system clocks
  * 
  */
-void initSystemClks(void) {
+static void initSystemClks(void) {
     RCC_vInitSysClk();
     RCC_vEnableClk(RCC_APB2, USART1);
     RCC_vEnableClk(RCC_APB2, IOPA);
