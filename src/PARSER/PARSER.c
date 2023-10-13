@@ -61,12 +61,12 @@ static void ParseData(u8* Copy_u8BufData)
 
 HEX_RECORD_TYPE Parser_voidParseRecord(u8* Copy_u8BufData)
 {
-	HEX_RECORD_TYPE RecordType;
+	HEX_RECORD_TYPE RecordType = DEFAULT;
 	switch (Copy_u8BufData[8])
 	{
 		case '0': RecordType = DATA_RECORD;	ParseData(Copy_u8BufData);	 break;
 		case '1': RecordType = END_OF_FILE_RECORD; break;
-		case '4': RecordType = EXTENDED_LINEAR_ADDRESS_RECORD; ParseUpperAddress(Copy_u8BufData); break;
+		case '4': RecordType = EXTENDED_LINEAR_ADDRESS_RECORD; /* ParseUpperAddress(Copy_u8BufData); */ break;
 	}
 
 	return RecordType;
