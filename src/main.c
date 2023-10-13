@@ -25,11 +25,14 @@
 #define APP_FIRST_ADDRESS   0x08001004
 
 
+
 /*****              GLOBAL VARIABLES                    *****/
 volatile u8 endOfBLF = 0;
 volatile u8 u8RecBuffer[100];
 volatile u8 startParse = 0;
 volatile u8 eraseState = 1;
+ptr_func_t G_AppFirstAdd;
+
 
 
 /*****              Local Functions                    *****/
@@ -59,8 +62,8 @@ int main() {
     initSystemClks();
 
     /* BOOTLOADER LED */
-//    DIO_vSetPinMode(PORTA_ID, PIN1_ID, OUTPUT_2MHZ_PP);
-//    DIO_vSetPinVal(PORTA_ID, PIN1_ID, VAL_HIGH);
+    DIO_vSetPinMode(PORTA_ID, PIN1_ID, OUTPUT_2MHZ_PP);
+    DIO_vSetPinVal(PORTA_ID, PIN1_ID, VAL_HIGH);
 
     /**
      * UART Initialise:
@@ -104,6 +107,9 @@ int main() {
             startParse = 0;
         }
     }
+
+    /* Start The Application Code */
+    G_AppFirstAdd();
 }
 
 
@@ -115,15 +121,15 @@ static void endBootLoader(void) {
     /* Definition for the vector table */
     #define SCB_VTOR   *((volatile u32*)0xE000ED08)
 
-    ptr_func_t L_AppFirstAdd;
-
     /* The Start Of The Victor table: Start with stack pointer */
 	SCB_VTOR = 0x08001000;
 
-    L_AppFirstAdd = *((ptr_func_t*) APP_FIRST_ADDRESS);
+	G_AppFirstAdd = *((ptr_func_t*) APP_FIRST_ADDRESS);
 
-    /* Start The Application Code */
-    L_AppFirstAdd();
+    DIO_vSetPinVal(PORTA_ID, PIN1_ID, VAL_LOW);
+
+    /* Indicating The End Of BootLoader */
+    endOfBLF = 1;
 }
 
 
@@ -137,7 +143,6 @@ static void uartHandler(u16 data) {
 
     /* Received New Data: Reset The Timeout to 5 seconds */
     SYSTICK_vTurnOff();
-    SYSTICK_vSetIntervalSingle(5000000, &endBootLoader);
 
     if(data == '\n') {
     	/* If The First Record Has Been Received, Erase The Application Flash Area */
@@ -154,6 +159,8 @@ static void uartHandler(u16 data) {
     	/* Save The New Data Received */
         u8RecBuffer[u8RecIndex++] = (u8)data;
     }
+    SYSTICK_vReset();
+    SYSTICK_vSetIntervalSingle(5000000, &endBootLoader);
 }
 
 
