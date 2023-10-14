@@ -31,6 +31,7 @@ volatile u8 endOfBLF = 0;
 volatile u8 u8RecBuffer[100];
 volatile u8 startParse = 0;
 volatile u8 eraseState = 1;
+volatile u8 recordLength = 0;
 ptr_func_t G_AppFirstAdd;
 
 
@@ -65,6 +66,7 @@ int main() {
     DIO_vSetPinMode(PORTA_ID, PIN1_ID, OUTPUT_2MHZ_PP);
     DIO_vSetPinVal(PORTA_ID, PIN1_ID, VAL_HIGH);
 
+
     /**
      * UART Initialise:
      * 1- UART 1 enable
@@ -92,16 +94,20 @@ int main() {
         /* Wait For Receiving New Record */
         if(startParse == 1) {
             /* Parse The Received Record */
-            recordType = Parser_voidParseRecord(&u8RecBuffer);
+            recordType = Parser_eParseRecord(&u8RecBuffer);
 
             /* Check If It the last record */
             if(recordType == END_OF_FILE_RECORD) {
                 endOfBLF = 1;
                 endBootLoader();
+            } else if(recordType == CHECK_SUM_ERROR) {
+                UART_vSendString("err: CHECKSUM\n", UART1_ID);
+                /* To Be Handled */
+                while(1) ;
+            } else {
+                /* Reply For The GUI APP To receive New Record */
+                UART_vSendString("ok", UART1_ID);
             }
-
-            /* Reply For The GUI APP To receive New Record */
-            UART_vSendString("ok", UART1_ID);
 
             SYSTICK_vTurnOn();
             startParse = 0;
@@ -152,6 +158,9 @@ static void uartHandler(u16 data) {
         }
     	/* New Record Has Been Received, Parse the Record */
         startParse = 1;
+
+        /* Save The Record Length: To Be Used In Error Checking */
+        recordLength = u8RecIndex;
 
         /* Reset The Index ( For New Records ) */
         u8RecIndex = 0;

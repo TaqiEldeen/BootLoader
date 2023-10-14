@@ -10,9 +10,15 @@ typedef enum {
 	EXTENDED_LINEAR_ADDRESS_RECORD,
 	START_LINEAR_ADDRESS_RECORD,
 	DATA_RECORD,
-    DEFAULT
+    DEFAULT,
+	CHECK_SUM_ERROR
 }HEX_RECORD_TYPE;
 
-HEX_RECORD_TYPE Parser_voidParseRecord(u8* Copy_u8BufData);
+typedef enum {
+	NO_ERR,
+	ERR
+}CHECK_SUM_t;
+
+HEX_RECORD_TYPE Parser_eParseRecord(u8* Copy_u8BufData);
 
 #endif // PARSER_H
