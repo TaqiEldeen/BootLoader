@@ -22,7 +22,7 @@
 #include "PARSER/PARSER.h"
 
 /*****              MACROS                              *****/
-#define APP_FIRST_ADDRESS   0x08001004
+#define APP_FIRST_ADDRESS   0x08001000
 
 
 
@@ -49,7 +49,7 @@ static void endBootLoader(void);
  * 
  * @param data 
  */
-static void uartHandler(u16 data);
+static void receiveCode(u16 data);
 
 /**
  * @brief Initialise the system clocks
@@ -74,7 +74,7 @@ int main() {
      * 3- Read register not empty interrupt
      */
     UART_vInit();
-    UART_vSetCallBack( &uartHandler, UART1_ID );
+    UART_vSetCallBack( &receiveCode, UART1_ID );
     NVIC_vEnableInterrupt(NVIC_USART1);
 
     /**
@@ -102,7 +102,11 @@ int main() {
                 endBootLoader();
             } else if(recordType == CHECK_SUM_ERROR) {
                 UART_vSendString("err: CHECKSUM\n", UART1_ID);
-                /* To Be Handled */
+                /* To Be Handled: Remove while(1)
+                *  And wait for same record again.
+                *  And increament counter for number of errors, if it exceeds 5 ( Or any number )
+                *  Then load the application from SD card
+                */
                 while(1) ;
             } else {
                 /* Reply For The GUI APP To receive New Record */
@@ -128,9 +132,9 @@ static void endBootLoader(void) {
     #define SCB_VTOR   *((volatile u32*)0xE000ED08)
 
     /* The Start Of The Victor table: Start with stack pointer */
-	SCB_VTOR = 0x08001000;
+	SCB_VTOR = APP_FIRST_ADDRESS;
 
-	G_AppFirstAdd = *((ptr_func_t*) APP_FIRST_ADDRESS);
+	G_AppFirstAdd = *((ptr_func_t*) (APP_FIRST_ADDRESS + 4));
 
     DIO_vSetPinVal(PORTA_ID, PIN1_ID, VAL_LOW);
 
@@ -144,7 +148,7 @@ static void endBootLoader(void) {
  * 
  * @param data 
  */
-static void uartHandler(u16 data) {
+static void receiveCode(u16 data) {
     static u8 u8RecIndex = 0;
 
     /* Received New Data: Reset The Timeout to 5 seconds */
