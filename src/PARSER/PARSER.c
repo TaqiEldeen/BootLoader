@@ -75,7 +75,7 @@ static CHECK_SUM_t ParseData(u8* Copy_u8BufData)
 	Address = Address & 0xFFFF0000;
 	Address = Address | (DataDigit3) | (DataDigit2 << 4) | (DataDigit1 << 8) | (DataDigit0<<12);
 
-	for (i=0;i<CC/2; i++)
+	for (i=0; i< CC/2; i++)
 	{
 		DataDigit0 = AsciToHex (Copy_u8BufData[4*i+9 ]);
 		DataDigit1 = AsciToHex (Copy_u8BufData[4*i+10]);
@@ -84,15 +84,26 @@ static CHECK_SUM_t ParseData(u8* Copy_u8BufData)
 		/* EX: 0xFACB. D0 = F, D1 = A, D2 = C, D3 = B
 		 * Data --->  0X D2 D3 D0 D1  ---> 0x CB FA 
 		 * This is due to little-endian memory organization 
+		 * :07230C00  6572 7275 7074 0000    28
 		 */
 		Data[DataCounter] = (DataDigit3 << 8) | (DataDigit2 << 12) | (DataDigit1) | (DataDigit0<<4);
+
 		DataCounter++;
+		/* If it is ODD */
+		if( i == (CC/2 - 1)){
+			if( (CC % 2) != 0) {
+				DataDigit0 = AsciToHex (Copy_u8BufData[4*i+13]);
+				DataDigit1 = AsciToHex (Copy_u8BufData[4*i+14]);
+				Data[DataCounter] = (DataDigit1) | (DataDigit0 << 4) | (0x00 << 8) | (0x00 << 12);
+				DataCounter++;
+			}
+		}
 	}
 
 	/* DataCounter is for half-word access, therefor we multiply it by 2 to get every byte.
 	 * As the pointer in the function is u8 (Byte access)
 	 */
-	CHECK_SUM_t L_verifyCheckSum = checkSumVerifier(Copy_u8BufData, Data, DataCounter*2 );
+	CHECK_SUM_t L_verifyCheckSum = checkSumVerifier(Copy_u8BufData, Data, CC );
 
 	if(L_verifyCheckSum == NO_ERR) {
 		FPEC_eWriteData(Address,Data,CC/2);
@@ -155,14 +166,15 @@ static CHECK_SUM_t checkSumVerifier(u8 *Copy_u8Record, u8 *Copy_u8Data, u8 Copy_
 	}
 
 	/**
-	 * Add the already converted data to check sum
+	 * Add the already converted data to checksum
+	 * 6572 7275 7074 0000
 	 */
 	for(u8 i=0; i < Copy_u8LengthOfData; i++) {
 		L_u16CheckSum += Copy_u8Data[i];
 	}
 
 	/* Convert the recevied checksum to HEX 
-	 * EX: :1012A400000000000000000024000020380000209E
+	 * EX: :1012A400 000000000000000024000020380000209E
 	 * The checksum is at index of (cc + address characters + cc characters + record type characters + : character)
 	 * 9 ---> means: 	:1012A400
 	 * Copy_u8LengthOfData*2 --> means: every character in the data
