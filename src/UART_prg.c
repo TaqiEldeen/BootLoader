@@ -106,6 +106,8 @@ void UART_vInit(void){
 
         USART2->BRR = (L_u16Mantissa << 4) | L_u8Fraction;
 
+
+
     #endif /* UART2_STATE == UART_STATE_ENABLED */
 
     #if UART3_STATE == UART_STATE_ENABLED
@@ -282,15 +284,15 @@ void UART_vSendByte(u8 A_u8Data, UART_ENUM A_u8UartId){
     switch(A_u8UartId){
         case UART1_ID:
             USART1->DR = A_u8Data;
-            while(!GET_BIT(USART1->SR, TC));
+            while(!GET_BIT(USART1->SR, TXE));
             break;
         case UART2_ID:
             USART2->DR = A_u8Data;
-            while(!GET_BIT(USART2->SR, TC));
+            while(!GET_BIT(USART2->SR, TXE));
             break;
         case UART3_ID:
             USART3->DR = A_u8Data;
-            while(!GET_BIT(USART3->SR, TC));
+            while(!GET_BIT(USART3->SR, TXE));
             break;
         default:
             break;
