@@ -77,6 +77,9 @@ int main() {
     UART_vSetCallBack( &receiveCode, UART1_ID );
     NVIC_vEnableInterrupt(NVIC_USART1);
 
+//    /* Indicating BootLoader started */
+    UART_vSendString("READY\n", UART1_ID);
+
     /**
      * SysTick init
      * 1- AHB/8 clock
@@ -110,7 +113,7 @@ int main() {
                 while(1) ;
             } else {
                 /* Reply For The GUI APP To receive New Record */
-                UART_vSendString("ok", UART1_ID);
+                UART_vSendString("ok\n", UART1_ID);
             }
 
             SYSTICK_vTurnOn();
