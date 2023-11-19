@@ -18,7 +18,7 @@ Therefore be aware that you need to edit your linker script based on these const
 
 3- The bootloader receives the record, checking the record type and execute the coresponding actions
 
-    a- The first time the microcontroller enters the Bootloader, it erase the Application area
+    a- The first time the microcontroller enters the Bootloader, it erase the Application area (If a new firmware is received)
 
     b- If the record type is 00 (Data record), the bootloader will check the checksum ensuring no error in the record
 
