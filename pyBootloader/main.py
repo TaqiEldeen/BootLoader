@@ -42,7 +42,7 @@ while user_input == "":
         user_input = ""
 
 # Open the hex file for reading
-with open("D:/Embedded System Diploma/ARM_WSpace/Blink_LED1/Debug/Blink_LED1.hex", 'r') as hex_file:
+with open("YOUR_HEX_FILE", 'r') as hex_file:
     for line in hex_file:
         # Extract the record type from the line
         record_type = line[7:9]
